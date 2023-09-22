@@ -1,0 +1,149 @@
+#!/bin/sh
+
+####清除旧容器和镜像####
+function clean() {
+	echo "docker stop $applicaton_name"
+	docker stop $applicaton_name
+	echo "docker rm $applicaton_name"
+	docker rm $applicaton_name
+	echo "docker rmi $current_img"
+	docker rmi $current_img
+}
+
+####备份旧容器####
+function backup() {
+	echo "docker start backup!"
+	rename_tag=`date +'%m%d%H%M%S'`
+	container_count=0
+	container_max_size=3
+	docker rename $applicaton_name $applicaton_name_${rename_tag}
+	echo "docker rename success!"
+	docker stop $applicaton_name_${rename_tag}
+	echo "docker stop success!"
+	for container in `docker ps -aqf name=$applicaton_name_*` ; do
+		container_count=`expr ${container_count} + 1`
+		if [ ${container_count} -gt ${container_max_size} ]
+		then
+		docker rm ${container}
+		echo "remove: ${container} success!"
+		fi
+	done
+}
+
+function pre_handle() {
+    ####获取本机环境####
+    echo "******start pre_handle******"
+    source /root/.bash_profile
+    current_env=`env |grep -w SIEENV |awk -F= '{print $2}'`
+    echo "******current env is $current_env******"
+	container_count=`docker ps -a|grep -w $applicaton_name|wc -l`
+	echo "******current $applicaton_name container_count is $container_count******"
+	if [ $container_count = 1 ]
+	then
+		current_container_id=`docker ps -a --format "{{.ID}} {{.Names}}" |grep -w $applicaton_name|awk '{print $1}'`
+		echo "******current container_id is $current_container_id******"
+		current_img=`docker ps -a --format "{{.ID}} {{.Image}}" |grep -w $current_container_id|awk '{print $2}'`
+		echo "******current image is $current_img******"
+		if [[ $current_env = 'DEV' || $current_env = 'UAT' ]]
+		then
+		    ####测试环境直接清除容器和镜像####
+			clean
+		elif [ $current_env = 'PROD' ]
+		then
+		    ####正式环境需要备份容器####
+			echo "**********This is the production environment**********"
+			backup
+		else
+		    ####环境变量获取失败####
+			echo "get sie env fail---> exit!"
+		fi
+	else
+		echo "container is not exist!"
+	fi
+	####设置版本标识####
+	if [ $current_env = 'DEV' ]
+	then
+	    mark=Alpha
+	elif [ $current_env = 'UAT' ]
+    then
+        mark=Beta
+    elif [ $current_env = 'PROD' ]
+    then
+        mark=RC
+	fi
+}
+
+function pull() {
+	echo "docker pull $docker_url/platform/$applicaton_name:${version}_${mark}"
+	docker pull $docker_url/platform/$applicaton_name:${version}_${mark}
+}
+
+function run() {
+	 log_dir=/data/logs/$applicaton_name
+    if [ ! -d $log_dir ];then
+    mkdir -p $log_dir
+    fi
+    chmod 757 $log_dir
+    if [ $? -ne 0 ]; then
+        echo "目录授权失败!"
+        exit 1
+    fi
+	echo "docker run -d --name $applicaton_name -p $source_port:$target_port -v /data/logs/$applicaton_name:/tmp $docker_url/platform/$applicaton_name:${version}_${mark}"
+	docker run -d --name $applicaton_name -p $source_port:$target_port -v /data/logs/$applicaton_name:/tmp $docker_url/platform/$applicaton_name:${version}_${mark}
+}
+
+####执行入口####
+params1=$1
+array1=(${params1//:/ })
+applicaton_name=${array1[0]}
+version=${array1[1]}
+
+params2=$2
+array2=(${params2//:/ })
+source_port=${array2[0]}
+target_port=${array2[1]}
+
+docker_url=$3
+
+if [ $applicaton_name ]
+then
+    echo "****** current application_name is $applicaton_name ******"
+else
+    echo "param applicaton_name is missing!"
+    exit 1
+fi
+if [ $version ]
+then
+   echo "****** current version is $version ******"
+else
+   echo "param version is missing!"
+   exit 1
+fi
+if [ $source_port ]
+then
+   echo "****** source_port is $source_port ******"
+else
+   echo "param source_port is missing!"
+   exit 1
+fi
+if [ $target_port ]
+then
+   echo "****** target_port is $target_port ******"
+else
+   echo "param target_port is missing!"
+   exit 1
+fi
+if [ $docker_url ]
+then
+   echo "****** current docker_url is $docker_url ******"
+else
+   echo "param docker_url is missing!"
+   exit 1
+fi
+
+####预处理旧容器和镜像####
+pre_handle
+####拉取版本镜像####
+pull
+####运行版本镜像####
+run

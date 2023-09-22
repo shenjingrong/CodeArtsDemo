@@ -1,0 +1,44 @@
+node {
+
+    stage('checkout') {
+        checkout scm
+    }
+
+    stage('Sonarqube') {
+        script {
+            scannerHome = tool 'SonarQubeScanner'
+            withSonarQubeEnv('SonarQube-RD') {
+                sh "${scannerHome}/bin/sonar-scanner \
+                -Dsonar.projectKey=sieBasePackage \
+                -Dsonar.projectVersion=1.1 \
+                -Dsonar.java.source=1.8 \
+                -Dsonar.exclusions=**/test/**,**/docker/**,**/node_modules/**,**/assets/**,**/locales/**  \
+                -Dsonar.sources=web/vue/src,service/src \
+                -Dsonar.java.binaries=. \
+                -Dsonar.scm.provider=svn \
+                -Dsonar.projectName=sieBasePackage \
+                -Dsonar.typescript.lcov.reportPaths=coverage/lcov.info \
+                -Dsonar.host.url=http://192.168.175.183:9000 \
+                -Dsonar.login=45d32df49a91f36f2603b21a1e82b882c63cce03"
+            }
+            sleep(30)
+            timeout(5) {
+                def qg = waitForQualityGate()
+                if (qg.status != 'OK') {
+                    error "未通过SonarQube的代码检查，请及时修改! failure: ${qg.status}"
+                }
+            }
+        }
+    }
+
+    stage('clean') {
+        sh "cd service && ./mvnw clean"
+    }
+
+    stage('build') {
+        sh "cd service && ./docker-build siebasepackage:1.0.0_Alpha SIT 192.168.168.188:8082"
+        // sh "cd service && ./docker-build sieintegrationservice:1.1.2_Beta UAT 192.168.168.188:8082"
+    }
+
+}
+

@@ -1,0 +1,101 @@
+#!/bin/sh
+####打包####
+function package() {
+    echo "./mvnw package ${start_env} -DskipTests dockerfile:build"
+    ./mvnw package ${start_env} -DskipTests dockerfile:build
+    if [ $? -ne 0 ]; then
+            echo "mvn package fail, process exit!"
+            exit 1
+    fi
+}
+
+####删除本地镜像####
+function delete_local_images() {
+    echo "docker rmi $docker_url/platform/$applicaton_name:$version"
+    docker rmi $docker_url/platform/$applicaton_name:$version
+    echo "docker rmi $applicaton_name:$version"
+    docker rmi $applicaton_name:$version
+}
+
+####推送镜像仓库####
+function push() {
+    echo "docker tag $applicaton_name:$version $docker_url/platform/$applicaton_name:$version"
+    docker tag $applicaton_name:$version $docker_url/platform/$applicaton_name:$version
+    if [ $? -ne 0 ]; then
+        echo "docker tag fail, process exit!"
+        exit 1
+    fi
+    echo "docker push $docker_url/platform/$applicaton_name:$version"
+    docker push $docker_url/platform/$applicaton_name:$version
+    if [ $? -ne 0 ]; then
+        echo "docker push fail, process exit!"
+        exit 1
+    fi
+    delete_local_images
+}
+
+####执行入口####
+params=$1
+array=(${params//:/ })
+applicaton_name=${array[0]}
+version=${array[1]}
+current_env=$2
+docker_url=$3
+if [ $applicaton_name ]
+then
+    echo "****** current application_name is $applicaton_name ******"
+else
+    echo "param application_name is missing!"
+    exit 1
+fi
+if [ $version ]
+then
+   echo "****** current version is $version ******"
+else
+   echo "param version is missing!"
+   exit 1
+fi
+if [ $current_env ]
+then
+   echo "****** current env is $current_env ******"
+else
+   echo "param env is missing!"
+   exit 1
+fi
+if [ $docker_url ]
+then
+   echo "****** current docker_url is $docker_url ******"
+else
+   echo "param docker_url is missing!"
+   exit 1
+fi
+
+####测试环境####
+if [ $current_env = 'SIT' ]
+then
+echo "******This is the sit environment******"
+start_env='-Psit'
+
+####UAT环境####
+elif [ "$current_env" = 'UAT' ]
+then
+echo "******This is the uat environment******"
+start_env='-Puat'
+
+####正式环境####
+elif [ $current_env = 'PROD' ]
+then
+echo "******This is the production environment******"
+start_env='-Pprod'
+
+####获取失败####
+else
+echo "get sie env fail---> exit!"
+fi
+
+####打包/构建docker镜像,以及推送docker镜像到docker仓库####
+if [ "${start_env}" != '' ]
+then
+    package
+    push
+fi

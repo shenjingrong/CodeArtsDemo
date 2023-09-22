@@ -1,0 +1,13 @@
+node {
+
+    stage('checkout') {
+        checkout scm
+    }
+
+    stage('run') {
+        sh "cd service && ./docker-run siebasepackage:1.0.0 8761:8088 192.168.168.188:8082"
+        // sh "cd service && ./docker-run siebasepackage:1.0.0 8761:8088 218.13.91.106:8082"
+    }
+
+}
+

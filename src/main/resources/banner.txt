@@ -1,0 +1,9 @@
+
+${AnsiColor.GREEN}    __  ____               ${AnsiColor.RED} _  __
+${AnsiColor.GREEN}   /  |/  (_)_____________ ${AnsiColor.RED}| |/ /
+${AnsiColor.GREEN}  / /|_/ / / ___/ ___/ __ \${AnsiColor.RED}|   /
+${AnsiColor.GREEN} / /  / / / /  / /__/ /_/ ${AnsiColor.RED}/   |
+${AnsiColor.GREEN}/_/  /_/_/_/   \___/\____${AnsiColor.RED}/_/|_|
+
+${AnsiColor.BRIGHT_BLUE}:: MircoX 🤓  :: Running Spring Boot ${spring-boot.version} ::
+:: 相信指尖的力量可以改变世界 ::${AnsiColor.DEFAULT}

@@ -1,0 +1,82 @@
+#!/bin/sh
+####打包####
+function package() {
+    ./mvnw package ${start_env} -DskipTests dockerfile:build
+    if [ $? -ne 0 ]; then
+            echo "mvn package fail, process exit!"
+            exit 1
+    fi
+}
+
+####获取本机环境####
+source /root/.bash_profile
+current_env=`env |grep -w SIEENV |awk -F= '{print $2}'`
+start_env=''
+echo "******current env is $current_env******"
+####测试环境####
+if [ $current_env = 'DEV' ]
+then
+echo "**********This is the test environment**********"
+
+start_env='-Psit'
+current_img=`docker ps -a | grep -w siecodeartsdemoservice|awk '{print $2}'`
+if [ `docker ps -a|grep -w siecodeartsdemoservice|wc -l` = 1 ]
+then
+docker stop siecodeartsdemoservice
+echo "docker stop success!"
+docker rm siecodeartsdemoservice
+echo "docker remove success!"
+docker rmi $current_img
+echo "docker images remove success!"
+else
+echo "container is not exist!"
+fi
+
+####UAT环境####
+elif [ "$current_env" = 'UAT' ]
+then
+echo "**********This is the uat environment**********"
+
+start_env='-Puat'
+current_img=`docker ps -a | grep -w siecodeartsdemoservice|awk '{print $2}'`
+if [ `docker ps -a|grep -w siecodeartsdemoservice|wc -l` = 1 ]
+then
+docker stop siecodeartsdemoservice
+echo "docker stop success!"
+docker rm siecodeartsdemoservice
+echo "docker remove success!"
+docker rmi $current_img
+echo "docker images remove success!"
+else
+echo "container is not exist!"
+fi
+
+####正式环境####
+elif [ $current_env = 'PROD' ]
+then
+echo "**********This is the production environment**********"
+
+start_env='-Pprod'
+rename_tag=`date +'%m%d%H%m'`
+if [ `docker ps -a|grep -w siecodeartsdemoservice|wc -l` = 1 ]
+then
+docker rename siecodeartsdemoservice siecodeartsdemoservice_${rename_tag}
+echo "docker rename success!"
+docker stop siecodeartsdemoservice_${rename_tag}
+echo "docker stop success!"
+else
+echo "container is not exist!"
+fi
+
+else
+echo "get sie env fail---> exit!"
+fi
+
+####打包项目以及构建docker镜像以及运行docker镜像####
+if [ "${start_env}" != '' ]
+then
+package
+latest_img_version=`docker images siecodeartsdemoservice|grep -w siecodeartsdemoservice|awk 'NR==1{print}'|awk '{print $2}'`
+echo "start run, the latest_img_version is: ${latest_img_version}"
+docker run -d --name siecodeartsdemoservice -p 7090:7090 -v /data/logs/siecodeartsdemoservice:/tmp siecodeartsdemoservice:${latest_img_version}
+fi

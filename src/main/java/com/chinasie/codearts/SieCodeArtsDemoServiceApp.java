@@ -22,7 +22,7 @@ import java.util.Collection;
 
 @SpringBootApplication
 @EnableDiscoveryClient
-@EnableFeignClients(basePackages = {"com.sie.codeartsdemo.base.client"})
+@EnableFeignClients(basePackages = {"com.chinasie.codearts"})
 @EnableConfigurationProperties({LiquibaseProperties.class, ApplicationProperties.class})
 public class SieCodeArtsDemoServiceApp {
 

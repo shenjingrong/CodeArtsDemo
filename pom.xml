@@ -160,8 +160,8 @@
                 <version>${spring-cloud-alibaba.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
-            </dependency>         
-            
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
@@ -433,23 +433,6 @@
         <dependency>
             <groupId>com.alibaba.cloud</groupId>
             <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
-        </dependency>
-        <!-- 谷神2021人员基础服务 -->
-        <dependency>
-            <groupId>io.github.openfeign</groupId>
-            <artifactId>feign-core</artifactId>
-            <version>9.7.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.sie.irradiator</groupId>
-            <artifactId>2021-siecodeartsdemo-oauth-api</artifactId>
-            <version>2.5.4-SNAPSHOT</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>io.github.openfeign</groupId>
-                    <artifactId>feign-core</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <!-- microx工具包 -->
         <dependency>

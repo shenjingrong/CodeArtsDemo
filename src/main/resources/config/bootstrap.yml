@@ -1,12 +1,12 @@
 spring:
     application:
         ## 应用名，根据实际情况填写
-        name: sie-codeartsdemo-application
+        name: sieCodeartsdemoApplication
     cloud:
         nacos:
             config:
                 ## NacosService服务地址
-                server-addr: ${NACOS_IP}:${NACOS_PORT}
+                server-addr: ${NACOS_IP}
                 ## 命名空间，实际部署从环境变量中取值，建议按环境分为dev、sit、uat、prod
                 namespace: ${NAME_SPACE}
                 ## 读取多个配置文件
@@ -15,8 +15,8 @@ spring:
                 ## refresh：是否刷新
                 extension-configs:
                     -   data-id: sie-codeartsdemo.yaml
-                        group: SIE_CODEARTSDEMO_GROUP
+                        group: SIE_OFFICE-APP_GROUP
                         refresh: true
                     -   data-id: sie-codeartsdemo-ext.yaml
-                        group: SIE_CODEARTSDEMO_GROUP
+                        group: SIE_OFFICE-APP_GROUP
                         refresh: true
